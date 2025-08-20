@@ -1,0 +1,35 @@
+# Usa una imagen base de Python ligera.
+FROM python:3.9-slim
+
+# Define el directorio de trabajo dentro del contenedor.
+WORKDIR /app
+
+# Instala las dependencias de compilación del sistema operativo
+# y las bibliotecas necesarias para snap7.
+# También instala 'git' para clonar el repositorio de python-snap7.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    python3-dev \
+    libsnap7-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instala el paquete snap7 directamente desde su repositorio de Git.
+# Esto es necesario porque el paquete no está disponible como una "wheel"
+# (un binario precompilado) para esta configuración.
+# La versión 0.9 es la más estable para la mayoría de los casos.
+RUN pip install "git+https://github.com/gijzelaerr/python-snap7@master"
+
+# Copia el archivo de requisitos de Python.
+# Asegúrate de que este archivo ya NO contenga la línea "snap7".
+COPY requirements-plc.txt .
+
+# Instala el resto de los paquetes de Python definidos en requirements-plc.txt.
+RUN pip install -r requirements-plc.txt
+
+# Copia el script principal de tu aplicación.
+COPY plc_to_kafka.py .
+
+# Define el comando que se ejecutará al iniciar el contenedor.
+CMD ["python", "plc_to_kafka.py"]

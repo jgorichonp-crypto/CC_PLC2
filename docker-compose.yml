@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  postgres:
+    image: timescale/timescaledb:latest-pg13
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: plc_data_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    command: postgres -c shared_preload_libraries=timescaledb
+
+  plc_to_kafka_app:
+    build:
+      context: .
+      dockerfile: Dockerfile-plc
+    container_name: plc_to_kafka_app
+    depends_on:
+      - kafka
+    command: sh -c "sleep 10 && python plc_to_kafka.py"
+    environment:
+      PLC_IP: "192.168.234.232"
+      KAFKA_BROKER: "kafka:29092"
+      KAFKA_TOPIC: "plc_data_1"
+      MENSAJE: "plc-1"
+
+  plc_to_kafka_2_app:
+    build:
+      context: .
+      dockerfile: Dockerfile-plc
+    container_name: plc_to_kafka_2_app
+    depends_on:
+      - kafka
+    command: sh -c "sleep 10 && python plc_to_kafka.py"
+    environment:
+      PLC_IP: "192.168.234.232"
+      KAFKA_BROKER: "kafka:29092"
+      KAFKA_TOPIC: "plc_data_2"
+      MENSAJE: "plc-2"
+  
+  plc_to_kafka_3_app:
+    build:
+      context: .
+      dockerfile: Dockerfile-plc
+    container_name: plc_to_kafka_3_app
+    depends_on:
+      - kafka
+    command: sh -c "sleep 10 && python plc_to_kafka.py"
+    environment:
+      PLC_IP: "192.168.234.232"
+      KAFKA_BROKER: "kafka:29092"
+      KAFKA_TOPIC: "plc_data_3"
+      MENSAJE: "plc-3"
+
+  kafka_to_postgres_app:
+    build:
+      context: .
+      dockerfile: Dockerfile-ingestion
+    container_name: kafka_to_postgres_app
+    depends_on:
+      - kafka
+      - postgres
+    command: sh -c "sleep 20 && python kafka_to_postgres.py"
+    environment:
+      KAFKA_BROKER: "kafka:29092"
+      KAFKA_TOPIC: "plc_data"
+      POSTGRES_HOST: "postgres"
+      POSTGRES_DB: "plc_data_db"
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "password"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+      
+volumes:
+  postgres-data:
