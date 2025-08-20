@@ -1,6 +1,19 @@
 FROM python:3.9-slim
+
 WORKDIR /app
-COPY requirements-ingestion.txt .
-RUN pip install -r requirements-ingestion.txt
+
+# Copia toda la carpeta 'dependencies' al contenedor.
+COPY ./dependencies /app/dependencies
+
+# Instala los paquetes de Python desde el directorio local.
+# Asegúrate de que este archivo ya NO contenga la línea de "psycopg2-binary".
+RUN pip install --no-index --find-links /app/dependencies/ -r /app/dependencies/requirements-ingestion.txt
+
+# Instala psycopg2-binary directamente por el nombre de su archivo.
+# Debes reemplazar el nombre del archivo con el que descargaste.
+RUN pip install /app/dependencies/psycopg2_binary-2.9.10-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+# Copia el script principal de tu aplicación de ingesta.
 COPY kafka_to_postgres.py .
+
 CMD ["python", "kafka_to_postgres.py"]

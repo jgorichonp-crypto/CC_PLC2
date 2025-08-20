@@ -4,29 +4,23 @@ FROM python:3.9-slim
 # Define el directorio de trabajo dentro del contenedor.
 WORKDIR /app
 
-# Instala las dependencias de compilación del sistema operativo
-# y las bibliotecas necesarias para snap7.
-# También instala 'git' para clonar el repositorio de python-snap7.
+# Copia la carpeta 'dependencies' completa a tu contenedor.
+COPY ./dependencies /app/dependencies
+
+# Instala las dependencias de Python desde el directorio local.
+# Nota: Este requirements-plc.txt ya NO debe tener la línea de "python-snap7".
+RUN pip install --no-index --find-links /app/dependencies/ -r /app/dependencies/requirements-plc.txt
+
+# Instala snap7 directamente desde el repositorio que copiaste.
+RUN pip install /app/dependencies/python-snap7
+
+# Instala las dependencias del sistema operativo que AÚN necesitan internet.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     python3-dev \
     libsnap7-dev \
-    git \
     && rm -rf /var/lib/apt/lists/*
-
-# Instala el paquete snap7 directamente desde su repositorio de Git.
-# Esto es necesario porque el paquete no está disponible como una "wheel"
-# (un binario precompilado) para esta configuración.
-# La versión 0.9 es la más estable para la mayoría de los casos.
-RUN pip install "git+https://github.com/gijzelaerr/python-snap7@master"
-
-# Copia el archivo de requisitos de Python.
-# Asegúrate de que este archivo ya NO contenga la línea "snap7".
-COPY requirements-plc.txt .
-
-# Instala el resto de los paquetes de Python definidos en requirements-plc.txt.
-RUN pip install -r requirements-plc.txt
 
 # Copia el script principal de tu aplicación.
 COPY plc_to_kafka.py .
