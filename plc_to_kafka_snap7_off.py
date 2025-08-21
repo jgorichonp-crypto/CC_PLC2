@@ -46,7 +46,7 @@ try:
     else:
         print(f"Error: No se pudo conectar al PLC en {PLC_IP}.")
 
-except snap7.snap7.common.S7DriverError as e:
+except RuntimeError as e:
     print(f"Error de Snap7 al conectar/leer del PLC: {e}")
 except Exception as e:
     print(f"Error al procesar el mensaje o al conectar al PLC: {e}")

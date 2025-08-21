@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia el script principal de tu aplicación.
-COPY plc_to_kafka.py .
+COPY plc_to_kafka_snap7_off.py .
 
 # Define el comando que se ejecutará al iniciar el contenedor.
-CMD ["python", "plc_to_kafka.py"]
+CMD ["python", "plc_to_kafka_snap7_off.py"]
