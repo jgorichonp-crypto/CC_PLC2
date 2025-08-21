@@ -5,22 +5,14 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copia la carpeta 'dependencies' completa a tu contenedor.
+# Esta carpeta debe contener todos los archivos .whl correctos.
 COPY ./dependencies /app/dependencies
+RUN pip install --no-index --find-links /app/dependencies/ /app/dependencies/python_snap7-2.0.2-py3-none-manylinux_2_28_x86_64.whl -r /app/dependencies/requirements-plc.txt
 
-# Instala las dependencias de Python desde el directorio local.
-# Nota: Este requirements-plc.txt ya NO debe tener la línea de "python-snap7".
+# Instala todas las dependencias desde los archivos locales.
+# Usa --no-index para evitar la conexión a internet.
+# Usa --find-links para buscar en el directorio de dependencias.
 RUN pip install --no-index --find-links /app/dependencies/ -r /app/dependencies/requirements-plc.txt
-
-# Instala snap7 directamente desde el repositorio que copiaste.
-RUN pip install /app/dependencies/python-snap7
-
-# Instala las dependencias del sistema operativo que AÚN necesitan internet.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    python3-dev \
-    libsnap7-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copia el script principal de tu aplicación.
 COPY plc_to_kafka_snap7_off.py .
