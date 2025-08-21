@@ -47,12 +47,12 @@ services:
       - kafka
     command: sh -c "sleep 10 && python plc_to_kafka_snap7_off.py"
     environment:
-      PLC_IP: "10.30.244.90"
+      PLC_IP: "192.168.234.232"
       KAFKA_BROKER: "kafka:29092"
       KAFKA_TOPIC: "plc_data_1"
       MENSAJE: "plc-1"
       PLC_RACK: 0
-      PLC_SLOT: 0
+      PLC_SLOT: 1
 
   plc_to_kafka_2_app:
     build:
